@@ -1,7 +1,7 @@
 ## Neighborhood Maps
 The maps look like this
 ![](img/ScreenShotLaptop.png)
-![](img/ScreenShotResponsive1.png) ![](img/Responsive2.png)
+![](img/ScreenShotResponsive1.png) ![](img/ScreenShotResponsive2.png)
 Neighborhood maps is a single-page application featuring a map of Sunnyvale.
 
 The map has markers to identify popular locations or places in the city.
