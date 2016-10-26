@@ -3,6 +3,7 @@ var fsqr_locations = [];
 var myLatLng = {lat: 37.3710062, lng: -122.0375932}; // City : Sunnyvale, CA 
 var fourSqrUrl =  "https://api.foursquare.com/v2/venues/explore?ll=" + myLatLng.lat + "," + myLatLng.lng + "&section=topPicks&client_id=AC03210WVNTTVRWGF3V4SFLBUAPEDUGCGZEAIQW2T00ASB2R&client_secret=SCYEC5BPCBTKDH1G1EXN2RHSNYA1IAXKULRLRMFRQ200MHUM&v=20160928";
 var markers = [];
+
 var largeInfowindow = null;
 var defaultIcon = null;
 var highlightedIcon = null;
@@ -25,6 +26,7 @@ var LocationItem = function(title, latLng, address, rating, ratingColor,category
     this.menu = menu;
     this.url = url;
     this.id = id;
+
 };
 
 // Define the Pin class that contains a marker with visibility property
@@ -35,7 +37,7 @@ var Pin =  function( title, lat, lng, id, map){
   self.lat = ko.observable(lat);
   self.lng = ko.observable(lng);
   self.map = map;
-
+ 
   self.marker = new google.maps.Marker({
     position: new google.maps.LatLng(lat,lng),
     animation: google.maps.Animation.DROP,
@@ -126,13 +128,16 @@ var SearchViewModel = function(){
     // console.log( msg );
   });
   hotSpotRequest.fail(function( jqXHR, textStatus ) {
+    // show error message if the API doesn't load
     alert( "FourSquare Request failed, Please try again : " + textStatus );
   });
+
   
   self.initPins = function(){
     // The following group uses the location array to create an array of markers on initialize.
     markers = [];
     markerLocations = self.locations();
+    
     for (var i = 0; i < markerLocations.length; i++) {
       // Get the position from the location array.
       var lat = markerLocations[i].latLng.lat;
@@ -151,6 +156,7 @@ var SearchViewModel = function(){
       pin.isVisible(true);
       // Push the marker to our array of markers.
       self.pins.push(pin);
+
       // Create an onclick event to open the large infowindow at each marker.
       pin.marker.addListener('click', function() {
         populateInfoWindow(this, largeInfowindow);
@@ -163,9 +169,24 @@ var SearchViewModel = function(){
       pin.marker.addListener('mouseout', function() {
         this.setIcon(defaultIcon);
       });  
+     
     } 
+   
   }
     
+ // opens the info window on the marker when a hotspot is selected 
+ self.selectLocation = function(){
+   
+   var search = this.id;
+   var setMarker = null;
+ 
+   setMarker = ko.utils.arrayFilter(self.pins(), function(item) {
+            return item.marker.id == search;
+        });
+   populateInfoWindow(setMarker[0].marker, largeInfowindow);
+ }
+
+// filter the locations based on the query
   self.filteredLocations = ko.computed(function() {
         var filter = self.query().toLowerCase();
         if (!filter){
@@ -177,13 +198,16 @@ var SearchViewModel = function(){
         });
       }
     });
-    
+  
+  // filter the pins based on the query  
   self.filterPins = ko.computed(function(){
      var filter = self.query().toLowerCase();
      if(filter){
         return ko.utils.arrayFilter(self.pins(),function(pin){
             var match = pin.title().toLowerCase().indexOf(filter) >= 0;
             pin.isVisible(match);
+            // add DROP animation to the filtered markers
+            pin.marker.setAnimation(google.maps.Animation.DROP);
             return match;
         });
      }
@@ -191,6 +215,7 @@ var SearchViewModel = function(){
 
 };
 
+// populate the info window with details of the location of the marker selected
 function populateInfoWindow(marker,infoWindow){
    if (infoWindow.marker != marker) {
     var id = marker.id;

@@ -20,6 +20,11 @@
       .highlight-info {
         background-color: #FFFF24;
       }
+      .list-group-item .active {
+        background-color: black !important;
+        border-color: #aed248;
+
+      }
      </style>
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!--[if lt IE 9]>
@@ -56,8 +61,8 @@
         <div class="col-xs-6 col-sm-3 sidebar-offcanvas" id="sidebar">
            <input id="search" type="search" class="form-control" placeholder='filter for ...'  data-bind="textInput: query " autocomplete="off">
            <!-- display the list of hot spots obtained from FourSquare API -->
-           <ul  class ="list-group" data-bind="foreach: filteredLocations" >
-            <li  class="list-group-item" data-bind="text: title"></li>
+           <ul  class="nav nav-sidebar" data-bind="foreach: filteredLocations" >
+            <li  ><a href="#" data-bind="text: title , click: $parent.selectLocation"></a></li>
            </ul> 
         </div><!--/.sidebar-offcanvas-->
       </div><!--/row-->
