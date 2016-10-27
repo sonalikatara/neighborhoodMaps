@@ -14,6 +14,9 @@ var body = document.body, html = document.documentElement;
 var height = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
 document.getElementById('map').style.height = height + 'px';
 
+function googleError(){
+        alert("Couldn't load Gogle Maps. - Please try again !!");
+     };
 
 // Define Location class 
 var LocationItem = function(title, latLng, address, rating, ratingColor,category, menu, url,id){ 
@@ -59,13 +62,20 @@ var Pin =  function( title, lat, lng, id, map){
   });
 };
 
-function initMap(){         
+function initMap(){ 
+
+   if (typeof(google) == 'undefined') {
+      alert("Google maps not loading.. Please try again !!");
+   } else {
+
+
   // Create a map object and specify the DOM element for display.
     map = new google.maps.Map(document.getElementById('map'), {
       zoom: 13,
       center: myLatLng
     });
     
+
     // Style the  location  marker icon.
     defaultIcon = makeMarkerIcon('0091ff');
     // a "highlighted location" marker color for when the user mouses over the marker.
@@ -76,7 +86,8 @@ function initMap(){
      
      // info window to show information on the marker clicked we have one info window at a time 
      // so we initialize a blank InfoWindow to begin with and update it when a marker is clicked.
-     largeInfowindow = new google.maps.InfoWindow();                 
+     largeInfowindow = new google.maps.InfoWindow();  
+  };                
 }
 
 // This function takes in a COLOR, and then creates a new marker

@@ -77,8 +77,14 @@
     <script src='js/getLocations.js'></script> 
     <script src='js/offcanvas.js'></script> 
     <!--Load the APIs -->
+    <script>
+     
+     function gm_authFailure() { 
+        alert("Couldn't load Gogle Maps. - Please check your authentication key !!")
+     };
+    </script>
      <script async defer
-        src="https://maps.googleapis.com/maps/api/js?libraries=geometry,drawing&key=AIzaSyDDWDn0kAdtzOoQW5FFu11-yigYDPDXBwo&v=3&callback=initMap">
+        src="https://maps.googleapis.com/maps/api/js?libraries=geometry,drawing&key=AIzaSyDDWDn0kAdtzOoQW5FFu11-yigYDPDXBwo&v=3&callback=initMap" onerror="googleError()">
     </script>
 
   </body>
