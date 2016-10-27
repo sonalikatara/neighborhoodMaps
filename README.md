@@ -24,7 +24,7 @@ It uses Google Maps API and Four Square API to show maps and locations. These AP
 
 ## The repository uses the following files :
 
-* **searchMyNeighborhood.html**: The main HTML document. Contains links to all of the CSS and JS resources needed to render the map and locations. It also loads results of  Google Maps API asyncronously.
+* **index.html**: The main HTML document. Contains links to all of the CSS and JS resources needed to render the map and locations. It also loads results of  Google Maps API asyncronously.
 
 * **js/getLocations.js**: Contains all the java script and KnockOut.js code used to build the map. It makes an ajax call to FourSquare API to get the deatails of hot spots in Sunnyvale.
 

@@ -1,5 +1,5 @@
 var map;
-var fsqr_locations = [];
+var fsqrLocations = [];
 var myLatLng = {lat: 37.3710062, lng: -122.0375932}; // City : Sunnyvale, CA 
 var fourSqrUrl =  "https://api.foursquare.com/v2/venues/explore?ll=" + myLatLng.lat + "," + myLatLng.lng + "&section=topPicks&client_id=AC03210WVNTTVRWGF3V4SFLBUAPEDUGCGZEAIQW2T00ASB2R&client_secret=SCYEC5BPCBTKDH1G1EXN2RHSNYA1IAXKULRLRMFRQ200MHUM&v=20160928";
 var markers = [];
@@ -43,15 +43,18 @@ var Pin =  function( title, lat, lng, id, map){
     animation: google.maps.Animation.DROP,
     title: title,
     icon: defaultIcon,
+    map: map,
     id: id
   });
 
-  self.isVisible = ko.observable(false);
+  self.isVisible = ko.observable(true);
   self.isVisible.subscribe(function(currentState) {
     if (currentState) {
-      self.marker.setMap(self.map);
+      //self.marker.setMap(self.map);
+      self.marker.visible = true;
     } else {
-      self.marker.setMap(null);
+      //self.marker.setMap(null);
+      self.marker.visible = false;
     }
   });
 };
@@ -103,31 +106,27 @@ var SearchViewModel = function(){
   
   var hotSpotRequest = $.ajax({
      url: fourSqrUrl,
-     success: function(data){
-        var recommendationsCount = data.response.groups[0].items.length;
-        for (var i =0; i< recommendationsCount; i++){
-          var venue = data.response.groups[0].items[i].venue;
-          var name = data.response.groups[0].items[i].venue.name;
-          fsqr_locations[i]= new LocationItem(name, 
-                         {lat: data.response.groups[0].items[i].venue.location.lat, lng: data.response.groups[0].items[i].venue.location.lng},
-                         venue.location.formattedAddress[0] + ", " + venue.location.formattedAddress[1],
-                         venue.rating,
-                         venue.ratingColor,
-                         venue.categories[0].name,
-                         (venue.menu) ? venue.menu.url : '' ,
-                         (venue.url) ? venue.url : '',
-                         i
-                       );
-              self.locations.push(fsqr_locations[i]);
-             }
-            
-             self.initPins();
-        }
-  });
-  hotSpotRequest.done(function( msg ) {
-    // console.log( msg );
-  });
-  hotSpotRequest.fail(function( jqXHR, textStatus ) {
+  }).done(function( data ) {
+    var recommendationsCount = data.response.groups[0].items.length;
+    for (var i =0; i< recommendationsCount; i++){
+      var venue = data.response.groups[0].items[i].venue;
+      var name = data.response.groups[0].items[i].venue.name;
+      fsqrLocations[i]= new LocationItem(name, 
+                     {lat: data.response.groups[0].items[i].venue.location.lat, lng: data.response.groups[0].items[i].venue.location.lng},
+                     venue.location.formattedAddress[0] + ", " + venue.location.formattedAddress[1],
+                     venue.rating,
+                     venue.ratingColor,
+                     venue.categories[0].name,
+                     (venue.menu) ? venue.menu.url : '' ,
+                     (venue.url) ? venue.url : '',
+                     i
+                   );
+        self.locations.push(fsqrLocations[i]);
+       }
+      self.initPins();
+
+    //console.log( data);
+  }).fail(function( jqXHR, textStatus ) {
     // show error message if the API doesn't load
     alert( "FourSquare Request failed, Please try again : " + textStatus );
   });
@@ -163,16 +162,15 @@ var SearchViewModel = function(){
       }); 
       // Two event listeners - one for mouseover, one for mouseout,
       // to change the colors back and forth.
-     pin.marker.addListener('mouseover', function() {
+      pin.marker.addListener('mouseover', function() {
         this.setIcon(highlightedIcon);
       });
       pin.marker.addListener('mouseout', function() {
         this.setIcon(defaultIcon);
       });  
-     
+      
     } 
-   
-  }
+  };
     
  // opens the info window on the marker when a hotspot is selected 
  self.selectLocation = function(){
@@ -183,12 +181,21 @@ var SearchViewModel = function(){
    setMarker = ko.utils.arrayFilter(self.pins(), function(item) {
             return item.marker.id == search;
         });
+
    populateInfoWindow(setMarker[0].marker, largeInfowindow);
  }
+
+
 
 // filter the locations based on the query
   self.filteredLocations = ko.computed(function() {
         var filter = self.query().toLowerCase();
+        // close any open info windows
+        if (largeInfowindow){
+          largeInfowindow.close();
+        }
+        
+       
         if (!filter){
           return self.locations();
         }
@@ -202,15 +209,35 @@ var SearchViewModel = function(){
   // filter the pins based on the query  
   self.filterPins = ko.computed(function(){
      var filter = self.query().toLowerCase();
-     if(filter){
-        return ko.utils.arrayFilter(self.pins(),function(pin){
-            var match = pin.title().toLowerCase().indexOf(filter) >= 0;
-            pin.isVisible(match);
-            // add DROP animation to the filtered markers
-            pin.marker.setAnimation(google.maps.Animation.DROP);
-            return match;
+     var latLngBounds = new google.maps.LatLngBounds();
+
+     if (!filter){
+         // set all the pins as visible
+         return ko.utils.arrayFilter(self.pins(),function(pin){
+          match = true; 
+          pin.isVisible(match);
+          // add DROP animation to the filtered markers
+          pin.marker.setAnimation(google.maps.Animation.DROP);
+
+          // add pin's location to bounds
+          latLngBounds.extend(pin.marker.position);
+          return match;
         });
-     }
+        }
+        else {
+          return ko.utils.arrayFilter(self.pins(),function(pin){
+          var match = pin.title().toLowerCase().indexOf(filter) >= 0;
+          pin.isVisible(match);
+          // add DROP animation to the filtered markers
+          pin.marker.setAnimation(google.maps.Animation.DROP);
+
+          // add pin's location to bounds
+          latLngBounds.extend(pin.marker.position);
+          return match;
+      });
+      }
+     
+     self.map.fitBounds(latLngBounds);
    });
 
 };
@@ -218,21 +245,25 @@ var SearchViewModel = function(){
 // populate the info window with details of the location of the marker selected
 function populateInfoWindow(marker,infoWindow){
    if (infoWindow.marker != marker) {
+    if (infoWindow.marker) {
+       // change the  marker icon from highlighted to default marker
+       infoWindow.marker.setIcon(defaultIcon);
+     };   
     var id = marker.id;
     var content ="";
     // Clear the infowindow content to give the streetview time to load.
     // locations data for this marker exists display it on the infoWindow
     // display menu where available
-    if (fsqr_locations[id]){
-        locn = fsqr_locations[id];
-         content= '<div class="highlight-info"><b>' + marker.title + '</b></div><div>';
-         content +=  'Rating: <span style="background-color: #' + locn.ratingColor + ';">'  +  locn.rating + '</span>';
+    if (fsqrLocations[id]){
+        locn = fsqrLocations[id];
+         content= '<div class="bg-warning"><b>' + marker.title + '</b></div><div class="text-success">';
+         content +=  'Rating: <b><span style="background-color: #' + locn.ratingColor + '; padding: 2;">'  +  locn.rating + '</span></b>';
          content +=  '<br>' + locn.address;
          content +=  '<br>' + locn.category;
          if (locn.menu.length >4){
              content += '<span class="displayMenu"> &nbsp; <a href="' + locn.menu + '" target="_blank">Menu</a></span>';
          }
-         content +=  '</div> ';
+         content +=  '<div class="text-muted small">(Power by Foursquare API)</div></div> ';
          infoWindow.setContent(content);     
     } else
     {
@@ -242,11 +273,16 @@ function populateInfoWindow(marker,infoWindow){
     infoWindow.marker = marker;
     // Open the infowindow on the correct marker.
     infoWindow.open(map, marker);
+  
+    marker.setAnimation(google.maps.Animation.DROP);
     // Making sure the marker property is cleared if the infowindow is closed.
     infoWindow.addListener('closeclick', function() {
+
       infoWindow.marker = null;
+
     });
   }
 }
+
 
 
